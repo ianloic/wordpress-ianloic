@@ -27,7 +27,9 @@
 	<?php foreach ($comments as $comment) : ?>
 		<li id="comment-<?php comment_ID() ?>">
 			<cite>
-        <img class="gravatar" src="<?php gravatar(); ?>">
+        <?php if(function_exists('get_avatar')){
+              echo get_avatar($comment, '50');
+        } ?> 
 				<span class="author"><?php comment_author_link() ?></span>
 				<span class="date"><?php comment_date( $hemingway->date_format() . '.y' ) ?> / <?php comment_date('ga') ?></span>
 			</cite>
