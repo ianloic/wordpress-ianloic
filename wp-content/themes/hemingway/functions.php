@@ -94,7 +94,7 @@ class Hemingway
 			function get_excerpt(){
 				global $post;
 				
-				$max_length = 75; // Maximum words.
+				$max_length = 500; // Maximum words.
 				
 				// If they've manually put in an excerpt, let it go!
 				if ($post->post_excerpt) return $post->post_excerpt;
