@@ -50,7 +50,7 @@ function the_media_upload_tabs() {
 
 function get_image_send_to_editor($id, $alt, $title, $align, $url='', $rel = false, $size='medium') {
 
-	$html = get_image_tag($id, $alt, $title, $align, $rel, $size);
+	$html = get_image_tag($id, $alt, $title, $align, $size);
 
 	$rel = $rel ? ' rel="attachment wp-att-'.attribute_escape($id).'"' : '';
 
@@ -124,7 +124,7 @@ function wp_iframe($content_func /* ... */) {
 <html xmlns="http://www.w3.org/1999/xhtml" <?php do_action('admin_xml_ns'); ?> <?php language_attributes(); ?>>
 <head>
 <meta http-equiv="Content-Type" content="<?php bloginfo('html_type'); ?>; charset=<?php echo get_option('blog_charset'); ?>" />
-<title><?php bloginfo('name') ?> &rsaquo; <?php _e('Uploads'); ?> &#8212; WordPress</title>
+<title><?php bloginfo('name') ?> &rsaquo; <?php _e('Uploads'); ?> &#8212; <?php _e('WordPress'); ?></title>
 <?php
 wp_admin_css( 'css/global' );
 wp_admin_css();
@@ -246,8 +246,11 @@ function media_upload_form_handler() {
 		$send_id = (int) array_shift($keys);
 		$attachment = $_POST['attachments'][$send_id];
 		$html = $attachment['post_title'];
-		if ( !empty($attachment['url']) )
-			$html = "<a href='{$attachment['url']}'>$html</a>";
+		if ( !empty($attachment['url']) ) {
+			if ( strpos($attachment['url'], 'attachment_id') || false !== strpos($attachment['url'], get_permalink($_POST['post_id'])) )
+				$rel = " rel='attachment wp-att-".attribute_escape($send_id)."'";
+			$html = "<a href='{$attachment['url']}'$rel>$html</a>";
+		}
 		$html = apply_filters('media_send_to_editor', $html, $send_id, $attachment);
 		return media_send_to_editor($html);
 	}
@@ -527,7 +530,7 @@ function image_media_send_to_editor($html, $attachment_id, $attachment) {
 		else
 			$size = 'medium';
 
-		return get_image_send_to_editor($attachment_id, $attachment['post_excerpt'], $attachment['post_title'], $align, $url, $rel, $size);
+		return get_image_send_to_editor($attachment_id, $attachment['post_excerpt'], $attachment['post_title'], $align, $url, true, $size);
 	}
 
 	return $html;
@@ -779,10 +782,9 @@ function media_upload_form( $errors = null ) {
 	$flash_action_url = get_option('siteurl') . "/wp-admin/async-upload.php";
 
 	// If Mac and mod_security, no Flash. :(
-	if ( function_exists('apache_getenv') && false !== strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'mac') && 'on' == strtolower(apache_getenv('MODSEC_ENABLE')) )
+	$flash = true;
+	if ( false !== strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'mac') && apache_mod_loaded('mod_security') )
 		$flash = false;
-	else
-		$flash = true;
 
 	$post_id = intval($_REQUEST['post_id']);
 
@@ -811,7 +813,6 @@ jQuery(function($){
 			file_size_limit : "<?php echo wp_max_upload_size(); ?>b",
 			swfupload_element_id : "flash-upload-ui", // id of the element displayed when swfupload is available
 			degraded_element_id : "html-upload-ui",   // when swfupload is unavailable
-			swfupload_loaded_handler : uploadLoaded,
 			file_dialog_start_handler : fileDialogStart,
 			file_queued_handler : fileQueued,
 			upload_start_handler : uploadStart,
@@ -843,6 +844,9 @@ jQuery(function($){
 	</p>
 	<input type="hidden" name="post_id" id="post_id" value="<?php echo $post_id; ?>" />
 	<br class="clear" />
+	<?php if ( is_lighttpd_before_150() ): ?>
+	<p><?php _e('If you want to use all capabilities of the uploader, like uploading multiple files at once, please upgrade to lighttpd 1.5.'); ?></p>
+	<?php endif;?>
 </div>
 <?php
 }
@@ -1221,6 +1225,16 @@ add_action('admin_head_media_upload_gallery_form', 'media_admin_css');
 add_filter('media_upload_library', 'media_upload_library');
 add_action('admin_head_media_upload_library_form', 'media_admin_css');
 
+
+register_taxonomy(
+	'image_tags',
+	'attachment:image',
+	array(
+		'label' => __('Tags'),
+		'template' => __('Tags: %l'),
+		'sort' => false,
+	)
+);
 
 // Any 'attachment' taxonomy will be included in the description input form for the multi uploader
 // Example:

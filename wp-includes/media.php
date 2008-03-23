@@ -91,12 +91,12 @@ function image_downsize($id, $size = 'medium') {
 }
 
 // return an <img src /> tag for the given image attachment, scaling it down if requested
-function get_image_tag($id, $alt, $title, $align, $rel = false, $size='medium') {
+function get_image_tag($id, $alt, $title, $align, $size='medium') {
 
 	list( $img_src, $width, $height ) = image_downsize($id, $size);
 	$hwstring = image_hwstring($width, $height);
 
-	$html = '<img src="'.attribute_escape($img_src).'" alt="'.attribute_escape($alt).'" title="'.attribute_escape($title).'" '.$hwstring.'class="align'.attribute_escape($align).' size-'.attribute_escape($size).' attachment wp-att-'.attribute_escape($id).'" />';
+	$html = '<img src="'.attribute_escape($img_src).'" alt="'.attribute_escape($alt).'" title="'.attribute_escape($title).'" '.$hwstring.'class="align'.attribute_escape($align).' size-'.attribute_escape($size).' wp-image-'.$id.'" />';
 
 	$html = apply_filters( 'image_send_to_editor', $html, $id, $alt, $title, $align, $url );
 
@@ -175,7 +175,7 @@ function image_resize_dimensions($orig_w, $orig_h, $dest_w, $dest_h, $crop=false
 }
 
 // Scale down an image to fit a particular size and save a new copy of the image
-function image_resize( $file, $max_w, $max_h, $crop=false, $suffix=null, $dest_path=null, $jpeg_quality=75) {
+function image_resize( $file, $max_w, $max_h, $crop=false, $suffix=null, $dest_path=null, $jpeg_quality=90) {
 
 	$image = wp_load_image( $file );
 	if ( !is_resource( $image ) )
@@ -223,7 +223,7 @@ function image_resize( $file, $max_w, $max_h, $crop=false, $suffix=null, $dest_p
 	else {
 		// all other formats are converted to jpg
 		$destfilename = "{$dir}/{$name}-{$suffix}.jpg";
-		if (!imagejpeg( $newimage, $destfilename, $jpeg_quality ) )
+		if (!imagejpeg( $newimage, $destfilename, apply_filters( 'jpeg_quality', $jpeg_quality ) ) )
 			return new WP_Error('resize_path_invalid', __( 'Resize path invalid' ));
 	}
 
@@ -366,6 +366,7 @@ function gallery_shortcode($attr) {
 				border: 2px solid #cfcfcf;
 			}
 		</style>
+		<!-- see gallery_shortcode() in wp-includes/media.php -->
 		<div class='gallery'>");
 
 	foreach ( $attachments as $id => $attachment ) {

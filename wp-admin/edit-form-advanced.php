@@ -1,13 +1,13 @@
 <?php
 $action = isset($action)? $action : '';
 if ( isset($_GET['message']) )
-	$_GET['message'] = (int) $_GET['message'];
-$messages[1] = __('Post updated');
-$messages[2] = __('Custom field updated');
+	$_GET['message'] = absint( $_GET['message'] );
+$messages[1] = sprintf( __( 'Post updated. Continue editing below or <a href="%s">go back</a>.' ), attribute_escape( stripslashes( $_GET['_wp_original_http_referer'] ) ) );
+$messages[2] = __('Custom field updated.');
 $messages[3] = __('Custom field deleted.');
 ?>
 <?php if (isset($_GET['message'])) : ?>
-<div id="message" class="updated fade"><p><?php echo wp_specialchars($messages[$_GET['message']]); ?></p></div>
+<div id="message" class="updated fade"><p><?php echo $messages[$_GET['message']]; ?></p></div>
 <?php endif; ?>
 
 <form name="post" action="post.php" method="post" id="post">
@@ -59,11 +59,12 @@ $saveasdraft = '<input name="save" type="submit" id="save" class="button" tabind
 <input name="referredby" type="hidden" id="referredby" value="<?php
 if ( !empty($_REQUEST['popupurl']) )
 	echo clean_url(stripslashes($_REQUEST['popupurl']));
-else if ( url_to_postid(wp_get_referer()) == $post_ID )
+else if ( url_to_postid(wp_get_referer()) == $post_ID && strpos( wp_get_referer(), '/wp-admin/' ) === false )
 	echo 'redo';
 else
 	echo clean_url(stripslashes(wp_get_referer()));
 ?>" />
+<?php if ( 'draft' != $post->post_status ) wp_original_referer_field(true, 'previous'); ?>
 
 <?php echo $form_extra ?>
 
@@ -73,9 +74,9 @@ else
 
 <div id="previewview">
 <?php if ( 'publish' == $post->post_status ) { ?>
-<a href="<?php echo clean_url(get_permalink($post->ID)); ?>" target="_blank"><?php _e('View this Post'); ?></a>
+<a href="<?php echo clean_url(get_permalink($post->ID)); ?>" target="_blank" tabindex="4"><?php _e('View this Post'); ?></a>
 <?php } elseif ( 'edit' == $action ) { ?>
-<a href="<?php echo clean_url(apply_filters('preview_post_link', add_query_arg('preview', 'true', get_permalink($post->ID)))); ?>" target="_blank"><?php _e('Preview this Post'); ?></a>
+<a href="<?php echo clean_url(apply_filters('preview_post_link', add_query_arg('preview', 'true', get_permalink($post->ID)))); ?>" target="_blank"  tabindex="4"><?php _e('Preview this Post'); ?></a>
 <?php } ?>
 </div>
 
@@ -83,21 +84,21 @@ else
 
 <p><strong><?php _e('Publish Status') ?></strong></p>
 <p>
-<select name='post_status'>
-<?php if ( current_user_can('publish_posts') ) : ?>
+<select name='post_status' tabindex='4'>
+<?php if ( current_user_can('publish_posts') ) : // Contributors only get "Unpublished" and "Pending Review" ?>
 <option<?php selected( $post->post_status, 'publish' ); selected( $post->post_status, 'private' );?> value='publish'><?php _e('Published') ?></option>
-<?php else: ?>
-<option<?php selected( $post->post_status, 'private' ); ?> value='private'><?php _e('Published') ?></option>
-<?php endif; ?>
 <?php if ( 'future' == $post->post_status ) : ?>
-<option<?php selected( $post->post_status, 'future' ); ?> value='future'><?php _e('Pending') ?></option>
+<option<?php selected( $post->post_status, 'future' ); ?> value='future'><?php _e('Scheduled') ?></option>
+<?php endif; ?>
 <?php endif; ?>
 <option<?php selected( $post->post_status, 'pending' ); ?> value='pending'><?php _e('Pending Review') ?></option>
 <option<?php selected( $post->post_status, 'draft' ); ?> value='draft'><?php _e('Unpublished') ?></option>
 </select>
 </p>
 
-<p><label for="post_status_private" class="selectit"><input id="post_status_private" name="post_status" type="checkbox" value="private" <?php checked($post->post_status, 'private'); ?> /> <?php _e('Keep this post private') ?></label></p>
+<?php if ( current_user_can( 'publish_posts' ) ) : ?>
+<p><label for="post_status_private" class="selectit"><input id="post_status_private" name="post_status" type="checkbox" value="private" <?php checked($post->post_status, 'private'); ?> tabindex="4" /> <?php _e('Keep this post private') ?></label></p>
+<?php endif; ?>
 <?php
 if ($post_ID) {
 	if ( 'future' == $post->post_status ) { // scheduled for publishing at a future date
@@ -117,10 +118,12 @@ if ($post_ID) {
 	$time = mysql2date(get_option('time_format'), current_time('mysql'));
 }
 ?>
+<?php if ( current_user_can( 'publish_posts' ) ) : // Contributors don't get to choose the date of publish ?>
 <p class="curtime"><?php printf($stamp, $date, $time); ?>
-&nbsp;<a href="#edit_timestamp" class="edit-timestamp"><?php _e('Edit') ?></a></p>
+&nbsp;<a href="#edit_timestamp" class="edit-timestamp" tabindex='4'><?php _e('Edit') ?></a></p>
 
-<div id='timestampdiv'><?php touch_time(($action == 'edit')); ?></div>
+<div id='timestampdiv'><?php touch_time(($action == 'edit'),1,4); ?></div>
+<?php endif; ?>
 
 </div>
 
@@ -213,19 +216,19 @@ endif; ?>
 <div class="inside">
 
 <div id="category-adder" class="wp-hidden-children">
-	<h4><a id="category-add-toggle" href="#category-add"><?php _e( '+ Add New Category' ); ?></a></h4>
+	<h4><a id="category-add-toggle" href="#category-add" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
 	<p id="category-add" class="wp-hidden-child">
-		<input type="text" name="newcat" id="newcat" class="form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" />
-		<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'name' => 'newcat_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => __('Parent category') ) ); ?>
-		<input type="button" id="category-add-sumbit" class="add:categorychecklist:categorydiv button" value="<?php _e( 'Add' ); ?>" />
+		<input type="text" name="newcat" id="newcat" class="form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
+		<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'name' => 'newcat_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => __('Parent category'), 'tab_index' => 3 ) ); ?>
+		<input type="button" id="category-add-sumbit" class="add:categorychecklist:categorydiv button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
 		<?php wp_nonce_field( 'add-category', '_ajax_nonce', false ); ?>
 		<span id="category-ajax-response"></span>
 	</p>
 </div>
 
 <ul id="category-tabs">
-	<li class="ui-tabs-selected"><a href="#categories-all"><?php _e( 'All Categories' ); ?></a></li>
-	<li class="wp-no-js-hidden"><a href="#categories-pop"><?php _e( 'Most Used' ); ?></a></li>
+	<li class="ui-tabs-selected"><a href="#categories-all" tabindex="3"><?php _e( 'All Categories' ); ?></a></li>
+	<li class="wp-no-js-hidden"><a href="#categories-pop" tabindex="3"><?php _e( 'Most Used' ); ?></a></li>
 </ul>
 
 <div id="categories-all" class="ui-tabs-panel">
@@ -235,7 +238,7 @@ endif; ?>
 </div>
 
 <div id="categories-pop" class="ui-tabs-panel" style="display: none;">
-	<ul id="categorychecklist-pop" class="categorychecklist form-no-clear">
+	<ul id="categorychecklist-pop" class="categorychecklist form-no-clear" >
 		<?php wp_popular_terms_checklist('category'); ?>
 	</ul>
 </div>

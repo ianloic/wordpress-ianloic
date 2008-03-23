@@ -503,10 +503,11 @@ class Walker {
 			for ( $i = 0; $i < sizeof( $children_elements ); $i++ ) {
 
 				$child = $children_elements[$i];
-				if ($root->$parent_field == $child->$parent_field )
+				if ($root->$parent_field == $child->$parent_field ) {
 					$top_level_elements[] = $child;
 					array_splice( $children_elements, $i, 1 );
 					$i--;
+				}
 			}
 		}
 
@@ -764,7 +765,7 @@ class WP_Ajax_Response {
 				$response .= "<wp_error_data code='$code'$class>";
 
 				if ( is_scalar($error_data) ) {
-					$response .= "<![CDATA[$v]]>";
+					$response .= "<![CDATA[$error_data]]>";
 				} elseif ( is_array($error_data) ) {
 					foreach ( $error_data as $k => $v )
 						$response .= "<$k><![CDATA[$v]]></$k>";

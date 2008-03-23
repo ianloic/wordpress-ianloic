@@ -135,10 +135,11 @@ case 'editpost':
 			$referredby = preg_replace('|https?://[^/]+|i', '', $_POST['referredby']);
 		$referer = preg_replace('|https?://[^/]+|i', '', wp_get_referer());
 
-		if ( isset($_POST['save']) && ( 'draft' == $post->post_status || 'pending' == $post->post_status ) ) {
-			$location = "post.php?action=edit&post=$post_ID";
-		} elseif ( isset($_POST['save']) && (empty($referredby) || $referredby == $referer) ) {
-			$location = "post.php?action=edit&post=$post_ID";
+		if ( isset($_POST['save']) && ( empty($referredby) || $referredby == $referer || 'redo' != $referredby ) ) {
+			if ( $_POST['_wp_original_http_referer'] && strpos( $_POST['_wp_original_http_referer'], '/wp-admin/post.php') === false )
+				$location = add_query_arg( '_wp_original_http_referer', urlencode( stripslashes( $_POST['_wp_original_http_referer'] ) ), "post.php?action=edit&post=$post_ID&message=1" );
+			else
+				$location = "post.php?action=edit&post=$post_ID";
 		} elseif (isset($_POST['addmeta']) && $_POST['addmeta']) {
 			$location = add_query_arg( 'message', 2, wp_get_referer() );
 			$location = explode('#', $location);

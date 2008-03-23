@@ -127,7 +127,13 @@ function wp_plugin_update_row( $file ) {
 	$r = $current->response[ $file ];
 
 	echo "<tr><td colspan='5' class='plugin-update'>";
-	printf( __('There is a new version of %1$s available. <a href="%2$s">Download version %3$s here</a> or <a href="%4$s">upgrade automatically</a>.'), $plugin_data['Name'], $r->url, $r->new_version, wp_nonce_url("update.php?action=upgrade-plugin&amp;plugin=$file", 'upgrade-plugin_' . $file) );
+	if ( !current_user_can('edit_plugins') )
+		printf( __('There is a new version of %1$s available. <a href="%2$s">Download version %3$s here</a>.'), $plugin_data['Name'], $r->url, $r->new_version);
+	else if ( empty($r->package) )
+		printf( __('There is a new version of %1$s available. <a href="%2$s">Download version %3$s here</a> <em>automatic upgrade unavailable for this plugin</em>.'), $plugin_data['Name'], $r->url, $r->new_version);
+	else
+		printf( __('There is a new version of %1$s available. <a href="%2$s">Download version %3$s here</a> or <a href="%4$s">upgrade automatically</a>.'), $plugin_data['Name'], $r->url, $r->new_version, wp_nonce_url("update.php?action=upgrade-plugin&amp;plugin=$file", 'upgrade-plugin_' . $file) );
+	
 	echo "</td></tr>";
 }
 add_action( 'after_plugin_row', 'wp_plugin_update_row' );
@@ -191,13 +197,19 @@ function wp_update_plugin($plugin, $feedback = '') {
 	// Once installed, delete the package
 	unlink($file);
 
+	if ( is_plugin_active($plugin) ) {
+		//Deactivate the plugin
+		apply_filters('update_feedback', __('Deactivating the plugin'));
+		deactivate_plugins($plugin, true);
+	}
+
 	// Remove the existing plugin.
 	apply_filters('update_feedback', __('Removing the old version of the plugin'));
 	$plugin_dir = dirname($base . PLUGINDIR . "/$plugin");
 	$plugin_dir = trailingslashit($plugin_dir);
 	
 	// If plugin is in its own directory, recursively delete the directory.
-	if( strpos($plugin, '/') && $plugin_dir != $base . PLUGINDIR . '/' )
+	if ( strpos($plugin, '/') && $plugin_dir != $base . PLUGINDIR . '/' )
 		$deleted = $wp_filesystem->delete($plugin_dir, true);
 	else
 		$deleted = $wp_filesystem->delete($base . PLUGINDIR . "/$plugin");
@@ -219,6 +231,13 @@ function wp_update_plugin($plugin, $feedback = '') {
 
 	// Force refresh of plugin update information
 	delete_option('update_plugins');
+	
+	//Return the new plugin file.
+	if ( ! preg_match('!/([a-z0-9\-]+)/?$!i', $working_dir, $mat) )
+		return false;
+	$plugin = get_plugins('/' . $mat[1]); //Pass it with a leading slash
+	$list = array_keys($plugin);
+	return $mat[1] . '/' . $list[0]; //Pass it without a leading slash.
 }
 
 ?>

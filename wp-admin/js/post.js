@@ -71,7 +71,7 @@ jQuery(document).ready( function() {
 	jQuery('#tags-input').hide();
 	tag_update_quickclicks();
 	// add the quickadd form
-	jQuery('#jaxtag').prepend('<span id="ajaxtag"><input type="text" name="newtag" id="newtag" class="form-input-tip" size="16" autocomplete="off" value="'+postL10n.addTag+'" /><input type="button" class="button" id="tagadd" value="' + postL10n.add + '"/><input type="hidden"/><input type="hidden"/><span class="howto">'+postL10n.separate+'</span></span>');
+	jQuery('#jaxtag').prepend('<span id="ajaxtag"><input type="text" name="newtag" id="newtag" class="form-input-tip" size="16" autocomplete="off" value="'+postL10n.addTag+'" /><input type="button" class="button" id="tagadd" value="' + postL10n.add + '" tabindex="3" /><input type="hidden"/><input type="hidden"/><span class="howto">'+postL10n.separate+'</span></span>');
 	jQuery('#tagadd').click( tag_flush_to_text );
 	jQuery('#newtag').focus(function() {
 		if ( this.value == postL10n.addTag )
@@ -157,5 +157,13 @@ jQuery(document).ready( function() {
 			jQuery('.edit-timestamp').text(postL10n.edit);
 		}
 		return false;
-    });
+
+	});
+
+	// Custom Fields
+	jQuery('#the-list').wpList( { addAfter: function( xml, s ) {
+		if ( jQuery.isFunction( autosave_update_post_ID ) ) {
+			autosave_update_post_ID(s.parsed.responses[0].supplemental.postid);
+		}
+	} });
 });

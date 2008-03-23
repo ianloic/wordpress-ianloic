@@ -62,7 +62,7 @@ validate_active_plugins();
 <?php elseif (isset($_GET['deactivate-all'])) : ?>
 	<div id="message" class="updated fade"><p><?php _e('All plugins <strong>deactivated</strong>.'); ?></p></div>
 <?php elseif (isset($_GET['reactivate-all'])) : ?>
-	<div id="message" class="updated fade"><p><?php _e('All plugins <strong>reactivated</strong>.'); ?></p></div>
+	<div id="message" class="updated fade"><p><?php _e('Plugins <strong>reactivated</strong>.'); ?></p></div>
 <?php endif; ?>
 
 <div class="wrap">
@@ -93,7 +93,7 @@ if (empty($plugins)) {
 	<?php
 	} elseif ( empty($active) && !empty($inactive) ) {
 	?>
-	<a class="button-secondary" href="<?php echo wp_nonce_url('plugins.php?action=reactivate-all', 'reactivate-all'); ?>" class="delete"><?php _e('Reactivate All Plugins'); ?></a>
+	<a class="button-secondary" href="<?php echo wp_nonce_url('plugins.php?action=reactivate-all', 'reactivate-all'); ?>" class="delete"><?php _e('Reactivate Plugins'); ?></a>
 	<?php
 	} // endif active/inactive plugin check
 	?>
@@ -109,7 +109,7 @@ if (empty($plugins)) {
 		<th><?php _e('Plugin'); ?></th>
 		<th class="num"><?php _e('Version'); ?></th>
 		<th><?php _e('Description'); ?></th>
-		<th <?php if ( current_user_can('edit_plugins') ) echo ' colspan="2"'; ?>><?php _e('Action'); ?></th>
+		<th class="action-links" <?php if ( current_user_can('edit_plugins') ) echo ' colspan="2"'; ?>><?php _e('Action'); ?></th>
 	</tr>
 	</thead>
 	<tbody id="plugins">
@@ -149,7 +149,7 @@ if (empty($plugins)) {
 		<td class='name'>{$plugin_data['Title']}</td>
 		<td class='vers'>{$plugin_data['Version']}</td>
 		<td class='desc'><p>{$plugin_data['Description']}$author</p></td>
-		<td class='togl'>$toggle"; if ( current_user_can('edit_plugins') ) echo "$edit</td>";
+		<td class='togl action-links'>$toggle"; if ( current_user_can('edit_plugins') ) echo "$edit</td>";
 		echo"
 	</tr>";
 	do_action( 'after_plugin_row', $plugin_file );

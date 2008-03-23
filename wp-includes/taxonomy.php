@@ -796,8 +796,11 @@ function sanitize_term($term, $taxonomy, $context = 'display') {
  * @return mixed sanitized field
  */
 function sanitize_term_field($field, $value, $term_id, $taxonomy, $context) {
-	if ( 'parent' == $field  || 'term_id' == $field || 'count' == $field || 'term_group' == $field )
+	if ( 'parent' == $field  || 'term_id' == $field || 'count' == $field || 'term_group' == $field ) {
 		$value = (int) $value;
+		if ( $value < 0 )
+			$value = 0;
+	}
 
 	if ( 'raw' == $context )
 		return $value;
@@ -1152,13 +1155,15 @@ function wp_insert_term( $term, $taxonomy, $args = array() ) {
 	}
 
 	if ( ! $term_id = is_term($slug) ) {
-		$wpdb->insert( $wpdb->terms, compact( 'name', 'slug', 'term_group' ) );
+		if ( false === $wpdb->insert( $wpdb->terms, compact( 'name', 'slug', 'term_group' ) ) )
+			return new WP_Error('db_insert_error', __('Could not insert term into the database'), $wpdb->last_error);
 		$term_id = (int) $wpdb->insert_id;
 	} else if ( is_taxonomy_hierarchical($taxonomy) && !empty($parent) ) {
 		// If the taxonomy supports hierarchy and the term has a parent, make the slug unique
 		// by incorporating parent slugs.
 		$slug = wp_unique_term_slug($slug, (object) $args);
-		$wpdb->insert( $wpdb->terms, compact( 'name', 'slug', 'term_group' ) );
+		if ( false === $wpdb->insert( $wpdb->terms, compact( 'name', 'slug', 'term_group' ) ) )
+			return new WP_Error('db_insert_error', __('Could not insert term into the database'), $wpdb->last_error);
 		$term_id = (int) $wpdb->insert_id;
 	}
 
