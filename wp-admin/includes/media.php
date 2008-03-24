@@ -460,10 +460,10 @@ function get_attachment_taxonomies($attachment) {
 function image_attachment_fields_to_edit($form_fields, $post) {
 	if ( substr($post->post_mime_type, 0, 5) == 'image' ) {
 		$form_fields['post_title']['required'] = true;
-		$form_fields['post_excerpt']['label'] = __('Description');
+		$form_fields['post_excerpt']['label'] = __('Caption');
 		$form_fields['post_excerpt']['helps'][] = __('Alternate text, e.g. "The Mona Lisa"');
 
-		$form_fields['post_content']['label'] = __('Long Description');
+		$form_fields['post_content']['label'] = __('Description');
 
 		$thumb = wp_get_attachment_thumb_url($post->ID);
 
@@ -554,11 +554,11 @@ function get_attachment_fields_to_edit($post, $errors = null) {
 			'value'      => $edit_post->post_title,
 		),
 		'post_excerpt' => array(
-			'label'      => __('Description'),
+			'label'      => __('Caption'),
 			'value'      => $edit_post->post_excerpt,
 		),
 		'post_content' => array(
-			'label'      => __('Long description'),
+			'label'      => __('Description'),
 			'value'      => $edit_post->post_content,
 			'input'      => 'textarea',
 		),
@@ -996,7 +996,7 @@ foreach ( $post_mime_types as $mime_type => $label ) {
 	if ( wp_match_mime_types($mime_type, $_GET['post_mime_type']) )
 		$class = ' class="current"';
 
-	$type_links[] = "<li><a href='" . add_query_arg(array('post_mime_type'=>$mime_type, 'paged'=>false)) . "'$class>" . sprintf(__ngettext($label[2][0], $label[2][1], $num_posts[$mime_type]), "<span id='$mime_type-counter'>{$num_posts[$mime_type]}</span>") . '</a>';
+	$type_links[] = "<li><a href='" . add_query_arg(array('post_mime_type'=>$mime_type, 'paged'=>false)) . "'$class>" . sprintf(__ngettext($label[2][0], $label[2][1], $num_posts[$mime_type]), "<span id='$mime_type-counter'>" . number_format_i18n( $num_posts[$mime_type] ) . '</span>') . '</a>';
 }
 echo implode(' | </li>', $type_links) . '</li>';
 unset($type_links);
@@ -1224,41 +1224,5 @@ add_action('admin_head_media_upload_gallery_form', 'media_admin_css');
 
 add_filter('media_upload_library', 'media_upload_library');
 add_action('admin_head_media_upload_library_form', 'media_admin_css');
-
-
-register_taxonomy(
-	'image_tags',
-	'attachment:image',
-	array(
-		'label' => __('Tags'),
-		'template' => __('Tags: %l'),
-		'sort' => false,
-	)
-);
-
-// Any 'attachment' taxonomy will be included in the description input form for the multi uploader
-// Example:
-/*
-register_taxonomy(
-	'image_people',
-	'attachment:image',
-	array(
-		'label' => __('People'),
-		'template' => __('People: %l'),
-		'helps' => __('Left to right, top to bottom.'),
-		'sort' => true,
-		'args' => array(
-			'orderby' => 'term_order'
-		)
-	)
-);
-*/
-/*
-register_taxonomy('movie_director', 'attachment:video', array('label'=>__('Directors'), 'template'=>__('Directed by %l.')));
-register_taxonomy('movie_producer', 'attachment:video', array('label'=>__('Producers'), 'template'=>__('Produced by %l.')));
-register_taxonomy('movie_screenwriter', 'attachment:video', array('label'=>__('Screenwriter'), 'template'=>__('Screenplay by %l.')));
-register_taxonomy('movie_actor', 'attachment:video', array('label'=>__('Cast'), 'template'=>array(__('Cast: %l.')));
-register_taxonomy('movie_crew', 'attachment:video', array('label'=>__('Crew'), 'template'=>array(__('Crew: %l.')));
-*/
 
 ?>
