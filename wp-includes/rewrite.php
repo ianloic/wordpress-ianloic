@@ -67,7 +67,7 @@ function url_to_postid($url) {
 	$url = apply_filters('url_to_postid', $url);
 
 	// First, check to see if there is a 'p=N' or 'page_id=N' to match against
-	if ( preg_match('#[?&](p|page_id)=(\d+)#', $url, $values) )	{
+	if ( preg_match('#[?&](p|page_id|attachment_id)=(\d+)#', $url, $values) )	{
 		$id = absint($values[2]);
 		if ($id)
 			return $id;
@@ -461,6 +461,12 @@ class WP_Rewrite {
 		return $this->tag_structure;
 	}
 
+	function get_extra_permastruct($name) {
+		if ( isset($this->extra_permastructs[$name]) )
+			return $this->extra_permastructs[$name];
+		return false;
+	}
+
 	function get_author_permastruct() {
 		if (isset($this->author_structure)) {
 			return $this->author_structure;
@@ -759,7 +765,7 @@ class WP_Rewrite {
 					//add regexes/queries for attachments, attachment trackbacks and so on
 					if ( ! $page ) //require <permalink>/attachment/stuff form for pages because of confusion with subpages
 						$rewrite = array_merge($rewrite, array($sub1 => $subquery, $sub1tb => $subtbquery, $sub1feed => $subfeedquery, $sub1feed2 => $subfeedquery));
-					$rewrite = array_merge($rewrite, array($sub2 => $subquery, $sub2tb => $subtbquery, $sub2feed => $subfeedquery, $sub2feed2 => $subfeedquery));
+					$rewrite = array_merge(array($sub2 => $subquery, $sub2tb => $subtbquery, $sub2feed => $subfeedquery, $sub2feed2 => $subfeedquery), $rewrite);
 				}
 			} //if($num_toks)
 			//add the rules for this dir to the accumulating $post_rewrite
@@ -832,15 +838,14 @@ class WP_Rewrite {
 		$page_rewrite = apply_filters('page_rewrite_rules', $page_rewrite);
 
 		// Extra permastructs
-		$extra_rewrite = array();
 		foreach ( $this->extra_permastructs as $permastruct )
-			$extra_rewrite = array_merge($extra_rewrite, $this->generate_rewrite_rules($permastruct, EP_NONE));
+			$this->extra_rules_top = array_merge($this->extra_rules_top, $this->generate_rewrite_rules($permastruct, EP_NONE));
 
 		// Put them together.
 		if ( $this->use_verbose_page_rules )
-			$this->rules = array_merge($this->extra_rules_top, $robots_rewrite, $default_feeds, $page_rewrite, $root_rewrite, $comments_rewrite, $search_rewrite, $category_rewrite, $tag_rewrite, $author_rewrite, $date_rewrite, $post_rewrite, $extra_rewrite, $this->extra_rules);
+			$this->rules = array_merge($this->extra_rules_top, $robots_rewrite, $default_feeds, $page_rewrite, $root_rewrite, $comments_rewrite, $search_rewrite, $category_rewrite, $tag_rewrite, $author_rewrite, $date_rewrite, $post_rewrite, $this->extra_rules);
 		else
-			$this->rules = array_merge($this->extra_rules_top, $robots_rewrite, $default_feeds, $root_rewrite, $comments_rewrite, $search_rewrite, $category_rewrite, $tag_rewrite, $author_rewrite, $date_rewrite, $post_rewrite, $extra_rewrite, $page_rewrite, $this->extra_rules);
+			$this->rules = array_merge($this->extra_rules_top, $robots_rewrite, $default_feeds, $root_rewrite, $comments_rewrite, $search_rewrite, $category_rewrite, $tag_rewrite, $author_rewrite, $date_rewrite, $post_rewrite, $page_rewrite, $this->extra_rules);
 
 		do_action_ref_array('generate_rewrite_rules', array(&$this));
 		$this->rules = apply_filters('rewrite_rules_array', $this->rules);
@@ -954,10 +959,10 @@ class WP_Rewrite {
 		$wp->add_query_var($name);
 	}
 
-	function add_permastruct($struct, $with_front = true) {
+	function add_permastruct($name, $struct, $with_front = true) {
 		if ( $with_front )
 			$struct = $this->front . $struct;
-		$this->extra_permastructs[] = $struct;
+		$this->extra_permastructs[$name] = $struct;
 	}
 
 	function flush_rules() {

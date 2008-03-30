@@ -680,6 +680,12 @@ class WP_Query {
 
 			if ( empty($qv['taxonomy']) || empty($qv['term']) ) {
 				$this->is_tax = false;
+				foreach ( $GLOBALS['wp_taxonomies'] as $t ) {
+					if ( isset($t->query_var) && '' != $qv[$t->query_var] ) {
+						$this->is_tax = true;
+						break;
+					}
+				}
 			} else {
 				$this->is_tax = true;
 			}
@@ -819,6 +825,7 @@ class WP_Query {
 		$join = '';
 		$search = '';
 		$groupby = '';
+		$post_status_join = false;
 
 		if ( !isset($q['post_type']) ) {
 			if ( $this->is_search )
@@ -989,8 +996,11 @@ class WP_Query {
 			$q['cat'] = ''.urldecode($q['cat']).'';
 			$q['cat'] = addslashes_gpc($q['cat']);
 			$cat_array = preg_split('/[,\s]+/', $q['cat']);
+			$q['cat'] = '';
+			$req_cats = array();
 			foreach ( $cat_array as $cat ) {
 				$cat = intval($cat);
+				$req_cats[] = $cat;
 				$in = ($cat > 0);
 				$cat = abs($cat);
 				if ( $in ) {
@@ -1001,6 +1011,7 @@ class WP_Query {
 					$q['category__not_in'] = array_merge($q['category__not_in'], get_term_children($cat, 'category'));
 				}
 			}
+			$q['cat'] = implode(',', $req_cats);
 		}
 
 		if ( !empty($q['category__in']) || !empty($q['category__not_in']) || !empty($q['category__and']) ) {
@@ -1025,7 +1036,7 @@ class WP_Query {
 		}
 
 		// Category stuff for nice URLs
-		if ( '' != $q['category_name'] ) {
+		if ( '' != $q['category_name'] && !$this->is_singular ) {
 			$reqcat = get_category_by_path($q['category_name']);
 			$q['category_name'] = str_replace('%2F', '/', urlencode(urldecode($q['category_name'])));
 			$cat_paths = '/' . trim($q['category_name'], '/');
@@ -1141,18 +1152,33 @@ class WP_Query {
 
 		// Taxonomies
 		if ( $this->is_tax ) {
-			$terms = get_terms($q['taxonomy'], array('slug'=>$q['term']));
-			foreach ( $terms as $term )
-				$term_ids[] = $term->term_id;
-			$post_ids = get_objects_in_term($term_ids, $q['taxonomy']);
-
-			if ( count($post_ids) ) {
-				$whichcat .= " AND $wpdb->posts.ID IN (" . implode(', ', $post_ids) . ") ";
-				$post_type = 'any';
-				$q['post_status'] = 'publish';
-				$post_status_join = true;
+			if ( '' != $q['taxonomy'] ) {
+				$taxonomy = $q['taxonomy'];
+				$tt[$taxonomy] = $q['term'];
+				$terms = get_terms($q['taxonomy'], array('slug'=>$q['term']));
 			} else {
-				$whichcat = " AND 0 = 1";
+				foreach ( $GLOBALS['wp_taxonomies'] as $taxonomy => $t ) {
+					if ( isset($t->query_var) && '' != $q[$t->query_var] ) {
+						$terms = get_terms($taxonomy, array('slug'=>$q[$t->query_var]));
+						if ( !is_wp_error($terms) )
+							break;
+					}
+				}
+			}
+			if ( is_wp_error($terms) || empty($terms) ) {
+				$whichcat = " AND 0 ";
+			} else {
+				foreach ( $terms as $term )
+					$term_ids[] = $term->term_id;
+				$post_ids = get_objects_in_term($term_ids, $taxonomy);
+				if ( !is_wp_error($post_ids) && count($post_ids) ) {
+					$whichcat .= " AND $wpdb->posts.ID IN (" . implode(', ', $post_ids) . ") ";
+					$post_type = 'any';
+					$q['post_status'] = 'publish';
+					$post_status_join = true;
+				} else {
+					$whichcat = " AND 0 ";
+				}
 			}
 		}
 
@@ -1291,7 +1317,7 @@ class WP_Query {
 					$statuswheres[] = "(" . join( ' OR ', $p_status ) . ")";
 			}
 			if ( $post_status_join ) {
-				$join .= " INNER JOIN $wpdb->posts AS p2 ON ($wpdb->posts.post_parent = p2.ID) ";
+				$join .= " LEFT JOIN $wpdb->posts AS p2 ON ($wpdb->posts.post_parent = p2.ID) ";
 				foreach ( $statuswheres as $index => $statuswhere )
 					$statuswheres[$index] = "($statuswhere OR ($wpdb->posts.post_status = 'inherit' AND " . str_replace($wpdb->posts, 'p2', $statuswhere) . "))";
 			}

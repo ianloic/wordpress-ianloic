@@ -368,6 +368,7 @@ function gallery_shortcode($attr) {
 	$itemtag = tag_escape($itemtag);
 	$captiontag = tag_escape($captiontag);
 	$columns = intval($columns);
+	$itemwidth = $columns > 0 ? floor(100/$columns) : 100;
 	
 	$output = apply_filters('gallery_style', "
 		<style type='text/css'>
@@ -378,7 +379,7 @@ function gallery_shortcode($attr) {
 				float: left;
 				margin-top: 10px;
 				text-align: center;
-				width: 33%;			}
+				width: {$itemwidth}%;			}
 			.gallery img {
 				border: 2px solid #cfcfcf;
 			}
@@ -435,6 +436,37 @@ function adjacent_image_link($prev = true) {
 
 	if ( isset($attachments[$k]) )
 		echo wp_get_attachment_link($attachments[$k]->ID, 'thumbnail', true);
+}
+
+function get_attachment_taxonomies($attachment) {
+	if ( is_int( $attachment ) )
+		$attachment = get_post($attachment);
+	else if ( is_array($attachment) )
+		$attachment = (object) $attachment;
+
+	if ( ! is_object($attachment) )
+		return array();
+
+	$filename = basename($attachment->guid);
+
+	$objects = array('attachment');
+
+	if ( false !== strpos($filename, '.') )
+		$objects[] = 'attachment:' . substr($filename, strrpos($filename, '.') + 1);
+	if ( !empty($attachment->post_mime_type) ) {
+		$objects[] = 'attachment:' . $attachment->post_mime_type;
+		if ( false !== strpos($attachment->post_mime_type, '/') )
+			foreach ( explode('/', $attachment->post_mime_type) as $token )
+				if ( !empty($token) )
+					$objects[] = "attachment:$token";
+	}
+
+	$taxonomies = array();
+	foreach ( $objects as $object )
+		if ( $taxes = get_object_taxonomies($object) )
+			$taxonomies = array_merge($taxonomies, $taxes);
+
+	return array_unique($taxonomies);
 }
 
 ?>

@@ -5,6 +5,7 @@ if ( isset($_GET['message']) )
 $messages[1] = sprintf( __( 'Post updated. Continue editing below or <a href="%s">go back</a>.' ), attribute_escape( stripslashes( $_GET['_wp_original_http_referer'] ) ) );
 $messages[2] = __('Custom field updated.');
 $messages[3] = __('Custom field deleted.');
+$messages[4] = __('Post updated.');
 ?>
 <?php if (isset($_GET['message'])) : ?>
 <div id="message" class="updated fade"><p><?php echo $messages[$_GET['message']]; ?></p></div>
@@ -120,9 +121,9 @@ if ($post_ID) {
 ?>
 <?php if ( current_user_can( 'publish_posts' ) ) : // Contributors don't get to choose the date of publish ?>
 <p class="curtime"><?php printf($stamp, $date, $time); ?>
-&nbsp;<a href="#edit_timestamp" class="edit-timestamp" tabindex='4'><?php _e('Edit') ?></a></p>
+&nbsp;<a href="#edit_timestamp" class="edit-timestamp hide-if-no-js" tabindex='4'><?php _e('Edit') ?></a></p>
 
-<div id='timestampdiv'><?php touch_time(($action == 'edit'),1,4); ?></div>
+<div id='timestampdiv' class='hide-if-js'><?php touch_time(($action == 'edit'),1,4); ?></div>
 <?php endif; ?>
 
 </div>
@@ -217,7 +218,7 @@ endif; ?>
 <div class="inside">
 
 <div id="category-adder" class="wp-hidden-children">
-	<h4><a id="category-add-toggle" href="#category-add" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
+	<h4><a id="category-add-toggle" href="#category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
 	<p id="category-add" class="wp-hidden-child">
 		<input type="text" name="newcat" id="newcat" class="form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
 		<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'name' => 'newcat_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => __('Parent category'), 'tab_index' => 3 ) ); ?>

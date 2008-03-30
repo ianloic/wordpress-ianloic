@@ -33,10 +33,10 @@ class WP_Scripts {
 		$visual_editor = apply_filters('visual_editor', array('tiny_mce'));
 		$this->add( 'editor', false, $visual_editor, '20080321' );
 
-		$this->add( 'editor_functions', '/wp-admin/js/editor.js', false, '20080321' );
+		$this->add( 'editor_functions', '/wp-admin/js/editor.js', false, '20080325' );
 
 		// Modify this version when tinyMCE plugins are changed.
-		$mce_version = apply_filters('tiny_mce_version', '20080323');
+		$mce_version = apply_filters('tiny_mce_version', '20080327');
 		$this->add( 'tiny_mce', '/wp-includes/js/tinymce/tiny_mce_config.php', array('editor_functions'), $mce_version );
 
 		$this->add( 'prototype', '/wp-includes/js/prototype.js', false, '1.6');
@@ -47,7 +47,7 @@ class WP_Scripts {
 			'broken' => __('An unidentified error has occurred.')
 		) );
 
-		$this->add( 'autosave', '/wp-includes/js/autosave.js', array('schedule', 'wp-ajax-response'), '20080322' );
+		$this->add( 'autosave', '/wp-includes/js/autosave.js', array('schedule', 'wp-ajax-response'), '20080326b' );
 
 		$this->add( 'wp-ajax', '/wp-includes/js/wp-ajax.js', array('prototype'), '20070306');
 		$this->localize( 'wp-ajax', 'WPAjaxL10n', array(
@@ -160,6 +160,10 @@ class WP_Scripts {
 			) );
 			$this->add( 'link', '/wp-admin/js/link.js', array('jquery-ui-tabs', 'wp-lists', 'postbox'), '20080131' );
 			$this->add( 'comment', '/wp-admin/js/comment.js', array('postbox'), '20080219' );
+			$this->localize( 'comment', 'commentL10n', array(
+					'cancel' => __('Cancel'),
+					'edit' => __('Edit'),
+				) );
 			$this->add( 'media-upload', '/wp-admin/js/media-upload.js', false, '20080109' );
 			$this->localize( 'upload', 'uploadL10n', array(
 				'browseTitle' => attribute_escape(__('Browse your files')),

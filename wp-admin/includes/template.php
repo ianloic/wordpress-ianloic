@@ -617,12 +617,7 @@ function _wp_comment_row( $comment_id, $mode, $comment_status, $checkbox = true 
 	$class = ('unapproved' == $the_comment_status) ? 'unapproved' : '';
 
 	if ( current_user_can( 'edit_post', $post->ID ) ) {
-		if ( 'attachment' == $post->post_type )
-			$post_link = "<a href='upload.php?attachment_id=$post->ID'>";
-		elseif ( 'page' == $post->post_type )
-			$post_link = "<a href='edit-pages.php?page_id=$post->ID'>";
-		else
-			$post_link = "<a href='edit.php?p=$post->ID'>";
+		$post_link = "<a href='" . get_comment_link() . "'>";
 
 		$post_link .= get_the_title($comment->comment_post_ID) . '</a>';
 			
@@ -770,7 +765,7 @@ function _list_meta_row( $entry, &$count ) {
 	}
 
 	$entry['meta_key']   = attribute_escape($entry['meta_key']);
-	$entry['meta_value'] = attribute_escape($entry['meta_value']);
+	$entry['meta_value'] = htmlspecialchars($entry['meta_value']); // using a <textarea />
 	$entry['meta_id'] = (int) $entry['meta_id'];
 
 	$delete_nonce = wp_create_nonce( 'delete-meta_' . $entry['meta_id'] );
@@ -1067,7 +1062,7 @@ function do_meta_boxes($page, $context, $object) {
 		echo '<div id="' . $box['id'] . '" class="postbox ' . postbox_classes($box['id'], $page) . '">' . "\n";
 		echo "<h3>{$box['title']}</h3>\n";
 		echo '<div class="inside">' . "\n";
-		call_user_func($box['callback'], $object);
+		call_user_func($box['callback'], $object, $box);
 		echo "</div>\n";
 		echo "</div>\n";
 	}
